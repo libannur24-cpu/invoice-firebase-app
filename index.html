@@ -13,23 +13,65 @@
     <div id="root"></div>
 
     <!-- Firebase SDK -->
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    <!-- Firebase SDK (module) + Auth + Firestore -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
-      // Your Firebase config
-      const firebaseConfig = {
-        apiKey: "AIzaSyB-SiSzGrWcdrB9XrEQj-hJOFRkD7RekWo",
-        authDomain: "invoice-firebase.firebaseapp.com",
-        projectId: "invoice-firebase",
-        storageBucket: "invoice-firebase.firebasestorage.app",
-        messagingSenderId: "827547847023",
-        appId: "1:827547847023:web:9505052a2c1dd814f5c09a"
-      };
+  // Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyB-SiSzGrWcdrB9XrEQj-hJOFRkD7RekWo",
+    authDomain: "invoice-firebase.firebaseapp.com",
+    projectId: "invoice-firebase",
+    storageBucket: "invoice-firebase.firebasestorage.app",
+    messagingSenderId: "827547847023",
+    appId: "1:827547847023:web:9505052a2c1dd814f5c09a"
+  };
 
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      console.log("✅ Firebase connected:", app);
-    </script>
+  // Initialize Firebase app, auth and Firestore
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  console.log("✅ Firebase app initialized");
+
+  // Sign in anonymously (if not signed in)
+  signInAnonymously(auth).catch(err => {
+    console.error("Auth signInAnonymously error:", err);
+  });
+
+  // When auth state changes, run a small DB test (you can remove testFirestore after confirming)
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      console.log("Auth: no user yet");
+      return;
+    }
+    console.log("✅ Signed in (anonymous) uid:", user.uid);
+
+    // tiny test function: write one test client and list clients
+    async function testFirestore() {
+      try {
+        const docRef = await addDoc(collection(db, "clients"), {
+          name: "Test Client (from web)",
+          phone: "0712345678",
+          createdAt: new Date().toISOString(),
+          test: true
+        });
+        console.log("📌 Test client added with ID:", docRef.id);
+
+        const snapshot = await getDocs(collection(db, "clients"));
+        snapshot.forEach(doc => {
+          console.log("👉 client doc:", doc.id, doc.data());
+        });
+      } catch (e) {
+        console.error("❌ Firestore test error:", e);
+      }
+    }
+
+    // run the test ONCE after sign-in
+    testFirestore();
+  });
+</script>
 
     <!-- React App -->
     <script type="text/babel">
